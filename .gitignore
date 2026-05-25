@@ -1,0 +1,19 @@
+node_modules/
+dist/
+build/
+
+# Env files — never commit secrets
+.env
+.env.local
+.env.*.local
+server/.env
+client/.env
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
