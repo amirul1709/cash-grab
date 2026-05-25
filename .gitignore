@@ -13,7 +13,15 @@ client/.env
 *.log
 npm-debug.log*
 
+# TypeScript build artifacts
+*.tsbuildinfo
+
+# Test coverage
+coverage/
+
 # OS / editor
 .DS_Store
+Thumbs.db
 .vscode/
 .idea/
+.claude/
