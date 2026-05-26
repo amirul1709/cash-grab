@@ -28,6 +28,13 @@ api.interceptors.response.use(
     const original = error.config;
     const isRefreshEndpoint = original?.url?.includes('/auth/refresh');
 
+    // Tab-race: another tab already rotated this token; wait briefly and retry.
+    if (error.response?.status === 409 && isRefreshEndpoint && !original._retry) {
+      original._retry = true;
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      return api(original);
+    }
+
     // Reactive fallback: catch 401s that slip through (clock skew, edge cases).
     if (error.response?.status === 401 && !original._retry && !isRefreshEndpoint) {
       original._retry = true;
