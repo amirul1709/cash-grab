@@ -23,6 +23,12 @@ export default function CategoryBreakdown({ data }: Props) {
       <div className="grid grid-cols-1 sm:grid-cols-[180px_1fr] gap-4 sm:gap-6 items-center">
         {/* Donut */}
         <div className="relative h-[180px]">
+          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+            <p className="text-[9px] font-mono tracking-editorial uppercase text-gray-400">Total</p>
+            <p className="text-lg font-light text-gray-900 tabular-nums tracking-tight">
+              ${total.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+            </p>
+          </div>
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
@@ -64,12 +70,6 @@ export default function CategoryBreakdown({ data }: Props) {
               />
             </PieChart>
           </ResponsiveContainer>
-          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-            <p className="text-[9px] font-mono tracking-editorial uppercase text-gray-400">Total</p>
-            <p className="text-lg font-light text-gray-900 tabular-nums tracking-tight">
-              ${total.toLocaleString('en-US', { maximumFractionDigits: 0 })}
-            </p>
-          </div>
         </div>
 
         {/* Legend list */}
