@@ -28,7 +28,9 @@ function BudgetProgress({ budget, actions }: { budget: Budget; actions?: React.R
       </div>
       <div className="h-1.5 bg-cream-200 rounded-full overflow-hidden">
         <div
-          className={`h-full rounded-full transition-all ${over ? 'bg-red-400' : 'bg-gray-900'}`}
+          className={`h-full rounded-full transition-all ${
+            over ? 'bg-red-400' : spent === limit ? 'bg-gray-900' : 'bg-gold-500'
+          }`}
           style={{ width: `${pct}%` }}
         />
       </div>

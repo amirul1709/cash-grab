@@ -98,7 +98,7 @@ export default function TransactionTable({
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <p className={`text-sm font-medium tabular-nums whitespace-nowrap ${
-                  t.type === 'income' ? 'text-emerald-600' : 'text-red-500'
+                  t.type === 'income' ? 'text-gold-600' : 'text-gray-900'
                 }`}>
                   {t.type === 'income' ? '+' : '−'}${parseFloat(t.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                 </p>
@@ -148,7 +148,7 @@ export default function TransactionTable({
                 </td>
                 <td className="px-5 py-3 text-sm text-gray-500">{t.account_name}</td>
                 <td className={`px-5 py-3 text-right text-sm font-medium tabular-nums whitespace-nowrap ${
-                  t.type === 'income' ? 'text-emerald-600' : 'text-red-500'
+                  t.type === 'income' ? 'text-gold-600' : 'text-gray-900'
                 }`}>
                   {t.type === 'income' ? '+' : '−'}${parseFloat(t.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                 </td>

@@ -88,7 +88,7 @@ export default function DashboardPage() {
                 </p>
               </div>
               <span className={`text-sm font-medium tabular-nums whitespace-nowrap ${
-                t.type === 'income' ? 'text-emerald-600' : 'text-red-500'
+                t.type === 'income' ? 'text-gold-600' : 'text-gray-900'
               }`}>
                 {t.type === 'income' ? '+' : '−'}${parseFloat(t.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
               </span>
