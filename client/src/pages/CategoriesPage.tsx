@@ -34,41 +34,41 @@ function CategoryModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 overflow-y-auto">
-      <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full max-w-sm max-h-[90vh] overflow-y-auto">
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-          <h2 className="font-semibold">{initial ? 'Edit' : 'New'} Category</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">✕</button>
+    <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 overflow-y-auto">
+      <div className="bg-white rounded-t-2xl sm:rounded-xl shadow-xl w-full max-w-sm max-h-[90vh] overflow-y-auto">
+        <div className="px-6 py-4 border-b border-cream-200 flex items-center justify-between">
+          <p className="text-[10px] font-mono tracking-wider uppercase text-gray-400">{initial ? 'Edit' : 'New'} Category</p>
+          <button onClick={onClose} className="text-gray-300 hover:text-gray-600 transition-colors text-sm">✕</button>
         </div>
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Name</label>
+            <label className="block text-[9px] font-mono tracking-wider uppercase text-gray-400 mb-2">Name</label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full bg-transparent border-0 border-b border-cream-300 pb-2 text-sm text-gray-900 focus:outline-none focus:border-gray-900 transition-colors"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Type</label>
-            <div className="flex rounded-lg overflow-hidden border border-gray-200">
+            <label className="block text-[9px] font-mono tracking-wider uppercase text-gray-400 mb-2">Type</label>
+            <div className="flex rounded-md overflow-hidden border border-cream-300">
               {(['expense', 'income'] as const).map((t) => (
                 <button
                   key={t}
                   type="button"
                   onClick={() => setType(t)}
-                  className={`flex-1 py-2 text-sm font-medium transition-colors ${
-                    type === t ? 'bg-indigo-600 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'
+                  className={`flex-1 py-2 text-xs font-mono tracking-wider uppercase transition-colors ${
+                    type === t ? 'bg-[#111111] text-white' : 'bg-white text-gray-400 hover:text-gray-700'
                   }`}
                 >
-                  {t.charAt(0).toUpperCase() + t.slice(1)}
+                  {t}
                 </button>
               ))}
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-2">Color</label>
+            <label className="block text-[9px] font-mono tracking-wider uppercase text-gray-400 mb-3">Color</label>
             <div className="flex flex-wrap gap-2">
               {COLORS.map((c) => (
                 <button
@@ -81,11 +81,11 @@ function CategoryModal({
               ))}
             </div>
           </div>
-          {error && <p className="text-sm text-red-500">{error}</p>}
+          {error && <p className="text-xs text-red-500 font-mono">{error}</p>}
           <button
             type="submit"
             disabled={save.isPending}
-            className="w-full bg-indigo-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+            className="w-full bg-[#111111] text-white py-3 text-xs font-mono tracking-wider uppercase hover:bg-gray-800 disabled:opacity-40 transition-colors rounded-md"
           >
             {save.isPending ? 'Saving…' : 'Save'}
           </button>
@@ -119,18 +119,18 @@ export default function CategoriesPage() {
   function CategoryList({ items, label }: { items: Category[]; label: string }) {
     return (
       <div>
-        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">{label}</h2>
+        <p className="text-[9px] font-mono tracking-wider uppercase text-gray-400 mb-3">{label}</p>
         {items.length === 0 && <p className="text-sm text-gray-400 mb-4">None yet</p>}
         <div className="space-y-2">
           {items.map((c) => (
-            <div key={c.id} className="flex items-center justify-between bg-white rounded-xl border border-gray-100 px-4 py-3">
+            <div key={c.id} className="flex items-center justify-between bg-white rounded-xl border border-cream-300 px-4 py-3 hover:border-cream-400 transition-colors">
               <div className="flex items-center gap-3">
-                <span className="w-4 h-4 rounded-full shrink-0" style={{ backgroundColor: c.color }} />
+                <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: c.color }} />
                 <span className="text-sm text-gray-900">{c.name}</span>
               </div>
-              <div className="flex gap-3">
-                <button onClick={() => setModal(c)} className="text-xs text-indigo-600 hover:text-indigo-800">Edit</button>
-                <button onClick={() => handleDelete(c.id)} className="text-xs text-red-500 hover:text-red-700">Delete</button>
+              <div className="flex gap-4">
+                <button onClick={() => setModal(c)} className="text-[10px] font-mono tracking-wider uppercase text-gray-400 hover:text-gray-900 transition-colors">Edit</button>
+                <button onClick={() => handleDelete(c.id)} className="text-[10px] font-mono tracking-wider uppercase text-red-400 hover:text-red-600 transition-colors">Delete</button>
               </div>
             </div>
           ))}
@@ -142,10 +142,13 @@ export default function CategoriesPage() {
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Categories</h1>
+        <div className="flex items-baseline gap-3">
+          <span className="font-mono text-[10px] text-gray-400">01 /</span>
+          <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 tracking-tight">Categories</h1>
+        </div>
         <button
           onClick={() => setModal('create')}
-          className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors whitespace-nowrap"
+          className="bg-[#111111] text-white px-4 py-2 rounded-md text-xs font-mono tracking-wider uppercase hover:bg-gray-800 transition-colors whitespace-nowrap"
         >
           + Add Category
         </button>
@@ -153,10 +156,10 @@ export default function CategoriesPage() {
 
       {isLoading ? (
         <div className="flex justify-center py-12">
-          <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+          <div className="w-5 h-5 border-2 border-gold-500 border-t-transparent rounded-full animate-spin" />
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-8">
           <CategoryList items={expense} label="Expense Categories" />
           <CategoryList items={income}  label="Income Categories"  />
         </div>

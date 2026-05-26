@@ -1,4 +1,4 @@
-import { useState, FormEvent } from 'react';
+import { useState, useRef, FormEvent } from 'react';
 import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { budgetsApi, type Budget, type BudgetPayload } from '../api/budgets';
@@ -12,34 +12,34 @@ function BudgetProgress({ budget, actions }: { budget: Budget; actions?: React.R
   const remaining = limit - spent;
 
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-      <div className="flex items-start justify-between mb-3">
+    <div className="bg-white rounded-xl border border-cream-300 p-5 hover:border-cream-400 transition-colors">
+      <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-2 min-w-0">
-          <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: budget.category_color }} />
+          <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: budget.category_color }} />
           <span className="font-medium text-gray-900 text-sm truncate">{budget.category_name}</span>
-          <span className="text-xs text-gray-400 capitalize shrink-0">{budget.period}</span>
+          <span className="text-[9px] font-mono tracking-wider uppercase text-gray-400 shrink-0">{budget.period}</span>
         </div>
         <div className="flex items-center gap-2 shrink-0 ml-2">
-          <span className={`text-xs font-semibold ${over ? 'text-red-500' : 'text-gray-500'}`}>
+          <span className={`text-xs font-mono tabular-nums ${over ? 'text-red-500' : 'text-gray-500'}`}>
             ${spent.toLocaleString()} / ${parseFloat(budget.amount).toLocaleString()}
           </span>
           {actions}
         </div>
       </div>
-      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+      <div className="h-1.5 bg-cream-200 rounded-full overflow-hidden">
         <div
-          className={`h-full rounded-full transition-all ${over ? 'bg-red-400' : 'bg-indigo-500'}`}
+          className={`h-full rounded-full transition-all ${over ? 'bg-red-400' : 'bg-gray-900'}`}
           style={{ width: `${pct}%` }}
         />
       </div>
       {over ? (
-        <p className="text-xs text-red-500 mt-1">
+        <p className="text-[10px] font-mono text-red-400 mt-2">
           ${(spent - limit).toLocaleString()} over budget
         </p>
       ) : remaining === 0 ? (
-        <p className="text-xs text-indigo-500 mt-1">Budget reached</p>
+        <p className="text-[10px] font-mono text-gray-400 mt-2">Budget reached</p>
       ) : (
-        <p className="text-xs text-indigo-500 mt-1">
+        <p className="text-[10px] font-mono text-gray-400 mt-2">
           ${remaining.toLocaleString()} remaining
         </p>
       )}
@@ -75,19 +75,19 @@ function BudgetModal({ initial, onClose }: { initial?: Budget | null; onClose: (
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 overflow-y-auto">
-      <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full max-w-sm max-h-[90vh] overflow-y-auto">
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-          <h2 className="font-semibold">{initial ? 'Edit' : 'New'} Budget</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">✕</button>
+    <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 overflow-y-auto">
+      <div className="bg-white rounded-t-2xl sm:rounded-xl shadow-xl w-full max-w-sm max-h-[90vh] overflow-y-auto">
+        <div className="px-6 py-4 border-b border-cream-200 flex items-center justify-between">
+          <p className="text-[10px] font-mono tracking-wider uppercase text-gray-400">{initial ? 'Edit' : 'New'} Budget</p>
+          <button onClick={onClose} className="text-gray-300 hover:text-gray-600 transition-colors text-sm">✕</button>
         </div>
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Category</label>
+            <label className="block text-[9px] font-mono tracking-wider uppercase text-gray-400 mb-2">Category</label>
             <select
               value={categoryId}
               onChange={(e) => setCategoryId(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full bg-transparent border-0 border-b border-cream-300 pb-2 text-sm text-gray-900 focus:outline-none focus:border-gray-900 transition-colors"
             >
               <option value="">Select category</option>
               {expenseCategories.map((c) => (
@@ -96,7 +96,7 @@ function BudgetModal({ initial, onClose }: { initial?: Budget | null; onClose: (
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Budget Limit</label>
+            <label className="block text-[9px] font-mono tracking-wider uppercase text-gray-400 mb-2">Budget Limit</label>
             <input
               type="number"
               min="0.01"
@@ -104,41 +104,41 @@ function BudgetModal({ initial, onClose }: { initial?: Budget | null; onClose: (
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               required
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full bg-transparent border-0 border-b border-cream-300 pb-2 text-sm text-gray-900 focus:outline-none focus:border-gray-900 transition-colors"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Period</label>
-            <div className="flex rounded-lg overflow-hidden border border-gray-200">
+            <label className="block text-[9px] font-mono tracking-wider uppercase text-gray-400 mb-2">Period</label>
+            <div className="flex rounded-md overflow-hidden border border-cream-300">
               {(['monthly', 'weekly'] as const).map((p) => (
                 <button
                   key={p}
                   type="button"
                   onClick={() => setPeriod(p)}
-                  className={`flex-1 py-2 text-sm font-medium transition-colors ${
-                    period === p ? 'bg-indigo-600 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'
+                  className={`flex-1 py-2 text-xs font-mono tracking-wider uppercase transition-colors ${
+                    period === p ? 'bg-[#111111] text-white' : 'bg-white text-gray-400 hover:text-gray-700'
                   }`}
                 >
-                  {p.charAt(0).toUpperCase() + p.slice(1)}
+                  {p}
                 </button>
               ))}
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Start Date</label>
+            <label className="block text-[9px] font-mono tracking-wider uppercase text-gray-400 mb-2">Start Date</label>
             <input
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
               required
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full bg-transparent border-0 border-b border-cream-300 pb-2 text-sm text-gray-900 focus:outline-none focus:border-gray-900 transition-colors"
             />
           </div>
-          {error && <p className="text-sm text-red-500">{error}</p>}
+          {error && <p className="text-xs text-red-500 font-mono">{error}</p>}
           <button
             type="submit"
             disabled={save.isPending}
-            className="w-full bg-indigo-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+            className="w-full bg-[#111111] text-white py-3 text-xs font-mono tracking-wider uppercase hover:bg-gray-800 disabled:opacity-40 transition-colors rounded-md"
           >
             {save.isPending ? 'Saving…' : 'Save'}
           </button>
@@ -155,8 +155,10 @@ export default function BudgetsPage() {
     queryFn: budgetsApi.list,
   });
 
-  const [modal, setModal] = useState<Budget | 'create' | null>(null);
+  const [modal, setModal]       = useState<Budget | 'create' | null>(null);
   const [openMenu, setOpenMenu] = useState<number | null>(null);
+  const [menuPos, setMenuPos]   = useState({ top: 0, right: 0 });
+  const menuBtnRefs             = useRef<Record<number, HTMLButtonElement | null>>({});
 
   const deleteMutation = useMutation({
     mutationFn: budgetsApi.remove,
@@ -170,10 +172,13 @@ export default function BudgetsPage() {
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Budgets</h1>
+        <div className="flex items-baseline gap-3">
+          <span className="font-mono text-[10px] text-gray-400">01 /</span>
+          <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 tracking-tight">Budgets</h1>
+        </div>
         <button
           onClick={() => setModal('create')}
-          className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors whitespace-nowrap"
+          className="bg-[#111111] text-white px-4 py-2 rounded-md text-xs font-mono tracking-wider uppercase hover:bg-gray-800 transition-colors whitespace-nowrap"
         >
           + Add Budget
         </button>
@@ -181,15 +186,15 @@ export default function BudgetsPage() {
 
       {isLoading ? (
         <div className="flex justify-center py-12">
-          <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+          <div className="w-5 h-5 border-2 border-gold-500 border-t-transparent rounded-full animate-spin" />
         </div>
       ) : budgets.length === 0 ? (
         <div className="text-center py-16 text-gray-400">
-          <p className="text-lg mb-2">No budgets yet</p>
+          <p className="text-base mb-1">No budgets yet</p>
           <p className="text-sm">Set spending limits per category</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
           {budgets.map((b) => (
             <div key={b.id}>
               <BudgetProgress
@@ -197,24 +202,35 @@ export default function BudgetsPage() {
                 actions={
                   <div className="relative">
                     <button
-                      onClick={() => setOpenMenu(openMenu === b.id ? null : b.id)}
-                      className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-700 text-base leading-none transition-colors"
+                      ref={(el) => { menuBtnRefs.current[b.id] = el; }}
+                      onClick={() => {
+                        const btn = menuBtnRefs.current[b.id];
+                        if (openMenu !== b.id && btn) {
+                          const rect = btn.getBoundingClientRect();
+                          setMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+                        }
+                        setOpenMenu(openMenu === b.id ? null : b.id);
+                      }}
+                      className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-cream-100 text-gray-400 hover:text-gray-700 text-base leading-none transition-colors"
                     >
                       ⋮
                     </button>
                     {openMenu === b.id && (
                       <>
-                        <div className="fixed inset-0 z-10" onClick={() => setOpenMenu(null)} />
-                        <div className="absolute right-0 top-8 z-20 bg-white border border-gray-100 rounded-lg shadow-lg overflow-hidden min-w-[100px]">
+                        <div className="fixed inset-0 z-40" onClick={() => setOpenMenu(null)} />
+                        <div
+                          className="fixed z-50 bg-white border border-cream-300 rounded-lg shadow-md overflow-hidden min-w-[100px]"
+                          style={{ top: menuPos.top, right: menuPos.right }}
+                        >
                           <button
                             onClick={() => { setModal(b); setOpenMenu(null); }}
-                            className="w-full text-left px-4 py-2 text-sm text-indigo-600 hover:bg-gray-50"
+                            className="w-full text-left px-4 py-2 text-xs font-mono tracking-wide text-gray-600 hover:bg-cream-100 transition-colors"
                           >
                             Edit
                           </button>
                           <button
                             onClick={() => { handleDelete(b.id); setOpenMenu(null); }}
-                            className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-gray-50"
+                            className="w-full text-left px-4 py-2 text-xs font-mono tracking-wide text-red-500 hover:bg-cream-100 transition-colors"
                           >
                             Delete
                           </button>

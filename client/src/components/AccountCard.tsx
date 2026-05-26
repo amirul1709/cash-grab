@@ -1,12 +1,12 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import type { Account } from '../api/accounts';
 
 const TYPE_LABELS: Record<Account['type'], string> = {
-  checking: 'Checking',
-  savings: 'Savings',
-  credit: 'Credit',
+  checking:   'Checking',
+  savings:    'Savings',
+  credit:     'Credit',
   investment: 'Investment',
-  cash: 'Cash',
+  cash:       'Cash',
 };
 
 interface Props {
@@ -16,37 +16,53 @@ interface Props {
 }
 
 export default function AccountCard({ account, onEdit, onDelete }: Props) {
-  const balance = parseFloat(account.balance);
+  const balance    = parseFloat(account.balance);
   const isNegative = balance < 0;
   const [menuOpen, setMenuOpen] = useState(false);
+  const [pos, setPos] = useState({ top: 0, right: 0 });
+  const btnRef = useRef<HTMLButtonElement>(null);
+
+  function handleMenuOpen() {
+    if (!menuOpen && btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      setPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+    }
+    setMenuOpen((v) => !v);
+  }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-      <div className="flex items-start justify-between mb-3">
+    <div className="bg-white border border-cream-300 rounded-xl p-5 hover:border-cream-400 transition-colors">
+      <div className="flex items-start justify-between mb-4">
         <div>
-          <p className="font-semibold text-gray-900">{account.name}</p>
-          <p className="text-xs text-gray-500">{TYPE_LABELS[account.type]} · {account.currency}</p>
+          <p className="text-[9px] font-mono tracking-editorial uppercase text-gray-400 mb-1">
+            {TYPE_LABELS[account.type]} · {account.currency}
+          </p>
+          <p className="font-medium text-gray-900 text-sm">{account.name}</p>
         </div>
         <div className="relative">
           <button
-            onClick={() => setMenuOpen(!menuOpen)}
-            className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-700 text-base leading-none transition-colors"
+            ref={btnRef}
+            onClick={handleMenuOpen}
+            className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-cream-100 text-gray-400 hover:text-gray-700 text-base leading-none transition-colors"
           >
             ⋮
           </button>
           {menuOpen && (
             <>
-              <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
-              <div className="absolute right-0 top-8 z-20 bg-white border border-gray-100 rounded-lg shadow-lg overflow-hidden min-w-[100px]">
+              <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
+              <div
+                className="fixed z-50 bg-white border border-cream-300 rounded-lg shadow-md overflow-hidden min-w-[100px]"
+                style={{ top: pos.top, right: pos.right }}
+              >
                 <button
                   onClick={() => { onEdit(account); setMenuOpen(false); }}
-                  className="w-full text-left px-4 py-2 text-sm text-indigo-600 hover:bg-gray-50"
+                  className="w-full text-left px-4 py-2 text-xs font-mono tracking-wide text-gray-600 hover:bg-cream-100 transition-colors"
                 >
                   Edit
                 </button>
                 <button
                   onClick={() => { onDelete(account.id); setMenuOpen(false); }}
-                  className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-gray-50"
+                  className="w-full text-left px-4 py-2 text-xs font-mono tracking-wide text-red-500 hover:bg-cream-100 transition-colors"
                 >
                   Delete
                 </button>
@@ -55,8 +71,8 @@ export default function AccountCard({ account, onEdit, onDelete }: Props) {
           )}
         </div>
       </div>
-      <p className={`text-2xl font-bold ${isNegative ? 'text-red-600' : 'text-gray-900'}`}>
-        {isNegative ? '-' : ''}${Math.abs(balance).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+      <p className={`text-3xl font-light tracking-tight tabular-nums ${isNegative ? 'text-red-500' : 'text-gray-900'}`}>
+        {isNegative ? '−' : ''}${Math.abs(balance).toLocaleString('en-US', { minimumFractionDigits: 2 })}
       </p>
     </div>
   );
