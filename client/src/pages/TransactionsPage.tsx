@@ -22,19 +22,25 @@ export default function TransactionsPage() {
   const { data: accounts = [] }   = useQuery({ queryKey: ['accounts'],   queryFn: accountsApi.list });
   const { data: categories = [] } = useQuery({ queryKey: ['categories'], queryFn: categoriesApi.list });
 
+  function invalidateTxQueries() {
+    qc.invalidateQueries({ queryKey: ['transactions'] });
+    qc.invalidateQueries({ queryKey: ['dashboard'] });
+    qc.invalidateQueries({ queryKey: ['accounts'] });
+  }
+
   const createMutation = useMutation({
     mutationFn: transactionsApi.create,
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['transactions'] }); qc.invalidateQueries({ queryKey: ['dashboard'] }); qc.invalidateQueries({ queryKey: ['accounts'] }); },
+    onSuccess: invalidateTxQueries,
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: TransactionPayload }) => transactionsApi.update(id, data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['transactions'] }); qc.invalidateQueries({ queryKey: ['dashboard'] }); qc.invalidateQueries({ queryKey: ['accounts'] }); },
+    onSuccess: invalidateTxQueries,
   });
 
   const deleteMutation = useMutation({
     mutationFn: transactionsApi.remove,
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['transactions'] }); qc.invalidateQueries({ queryKey: ['dashboard'] }); qc.invalidateQueries({ queryKey: ['accounts'] }); },
+    onSuccess: invalidateTxQueries,
   });
 
   async function handleSubmit(data: TransactionPayload) {

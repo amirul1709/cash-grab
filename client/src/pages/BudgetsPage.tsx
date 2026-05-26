@@ -1,10 +1,9 @@
-import { useState, useRef, FormEvent } from 'react';
-import React from 'react';
+import { useState, useRef, FormEvent, type ReactNode } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { budgetsApi, type Budget, type BudgetPayload } from '../api/budgets';
 import { categoriesApi } from '../api/categories';
 
-function BudgetProgress({ budget, actions }: { budget: Budget; actions?: React.ReactNode }) {
+function BudgetProgress({ budget, actions }: { budget: Budget; actions?: ReactNode }) {
   const spent  = parseFloat(budget.spent);
   const limit  = parseFloat(budget.amount);
   const pct    = Math.min(100, limit > 0 ? (spent / limit) * 100 : 0);
