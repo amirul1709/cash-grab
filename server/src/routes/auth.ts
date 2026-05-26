@@ -3,14 +3,19 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { z } from 'zod';
+import { PoolClient } from 'pg';
 import { pool } from '../db/pool';
 import { authenticate, AuthRequest } from '../middleware/auth';
+import { loginLimiter, registerLimiter, refreshLimiter } from '../middleware/rateLimit';
 
 const router = Router();
 
 // Pre-computed bcrypt hash of a random string, used to keep /login timing
 // constant when the email doesn't exist (prevents user enumeration).
 const DUMMY_HASH = '$2b$12$CwTycUXWue0Thq9StjUM0uJ8e6Z6vQp1FQk5dXqXTQYqQ8eHvJTWS';
+
+const REFRESH_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const ACCESS_TTL = '15m';
 
 const registerSchema = z.object({
   email: z.string().email(),
@@ -24,21 +29,32 @@ const loginSchema = z.object({
 });
 
 function makeAccessToken(id: number, email: string): string {
-  return jwt.sign({ id, email }, process.env.JWT_ACCESS_SECRET!, { expiresIn: '15m' });
+  return jwt.sign({ id, email }, process.env.JWT_ACCESS_SECRET!, { expiresIn: ACCESS_TTL });
 }
 
-async function makeRefreshToken(userId: number): Promise<string> {
+/**
+ * Issue a fresh refresh token. `familyId` is the chain id — pass an existing
+ * family on rotation, omit on first login.
+ *
+ * Accepts an optional `client` so callers inside a transaction can reuse the
+ * same connection.
+ */
+async function makeRefreshToken(
+  userId: number,
+  familyId: string,
+  client: PoolClient | typeof pool = pool
+): Promise<string> {
   const token = crypto.randomBytes(64).toString('hex');
   const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  await pool.query(
-    'INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3)',
-    [userId, tokenHash, expiresAt]
+  const expiresAt = new Date(Date.now() + REFRESH_TTL_MS);
+  await client.query(
+    'INSERT INTO refresh_tokens (user_id, token_hash, family_id, expires_at) VALUES ($1, $2, $3, $4)',
+    [userId, tokenHash, familyId, expiresAt]
   );
   return token;
 }
 
-router.post('/register', async (req: Request, res: Response) => {
+router.post('/register', registerLimiter, async (req: Request, res: Response) => {
   const body = registerSchema.parse(req.body);
 
   const existing = await pool.query('SELECT id FROM users WHERE email = $1', [body.email]);
@@ -55,15 +71,18 @@ router.post('/register', async (req: Request, res: Response) => {
   const user = result.rows[0];
 
   const accessToken = makeAccessToken(user.id, user.email);
-  const refreshToken = await makeRefreshToken(user.id);
+  const refreshToken = await makeRefreshToken(user.id, crypto.randomUUID());
 
   res.status(201).json({ accessToken, refreshToken, user });
 });
 
-router.post('/login', async (req: Request, res: Response) => {
+router.post('/login', loginLimiter, async (req: Request, res: Response) => {
   const body = loginSchema.parse(req.body);
 
-  const result = await pool.query('SELECT * FROM users WHERE email = $1', [body.email]);
+  const result = await pool.query(
+    'SELECT id, email, name, password_hash, created_at FROM users WHERE email = $1',
+    [body.email]
+  );
   const user = result.rows[0];
 
   const valid = await bcrypt.compare(body.password, user?.password_hash ?? DUMMY_HASH);
@@ -73,7 +92,7 @@ router.post('/login', async (req: Request, res: Response) => {
   }
 
   const accessToken = makeAccessToken(user.id, user.email);
-  const refreshToken = await makeRefreshToken(user.id);
+  const refreshToken = await makeRefreshToken(user.id, crypto.randomUUID());
 
   res.json({
     accessToken,
@@ -82,48 +101,103 @@ router.post('/login', async (req: Request, res: Response) => {
   });
 });
 
-router.post('/refresh', async (req: Request, res: Response) => {
+/**
+ * Refresh-token rotation with reuse detection.
+ *
+ * Each refresh token is part of a "family" (chain). On successful rotation we
+ * mark the old token used and issue a new one in the same family. If a token
+ * that's already been redeemed (used_at IS NOT NULL) is presented again, we
+ * assume theft and invalidate the entire family — forcing re-login on every
+ * device that descended from that login.
+ *
+ * The whole operation is one transaction so a failure mid-rotation can't
+ * leave the user in a half-state (no token recorded).
+ */
+router.post('/refresh', refreshLimiter, async (req: Request, res: Response) => {
   const { refreshToken } = req.body;
-  if (!refreshToken) {
+  if (!refreshToken || typeof refreshToken !== 'string') {
     res.status(401).json({ error: 'No refresh token' });
     return;
   }
 
   const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
-  const result = await pool.query(
-    'SELECT * FROM refresh_tokens WHERE token_hash = $1 AND expires_at > NOW()',
-    [tokenHash]
-  );
 
-  if (result.rows.length === 0) {
-    res.status(401).json({ error: 'Invalid or expired refresh token' });
-    return;
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    const result = await client.query(
+      `SELECT id, user_id, family_id, used_at, expires_at
+       FROM refresh_tokens
+       WHERE token_hash = $1
+       FOR UPDATE`,
+      [tokenHash]
+    );
+
+    if (result.rows.length === 0) {
+      await client.query('COMMIT');
+      res.status(401).json({ error: 'Invalid refresh token' });
+      return;
+    }
+
+    const row = result.rows[0];
+
+    // Reuse detection: the token's been redeemed before. Treat as compromised.
+    if (row.used_at !== null) {
+      await client.query('DELETE FROM refresh_tokens WHERE family_id = $1', [row.family_id]);
+      await client.query('COMMIT');
+      res.status(401).json({ error: 'Token reuse detected — please log in again' });
+      return;
+    }
+
+    if (new Date(row.expires_at) <= new Date()) {
+      await client.query('COMMIT');
+      res.status(401).json({ error: 'Refresh token expired' });
+      return;
+    }
+
+    // Mark the presented token as redeemed (kept around so future replays
+    // trigger the reuse-detection branch above).
+    await client.query('UPDATE refresh_tokens SET used_at = NOW() WHERE id = $1', [row.id]);
+
+    const userResult = await client.query(
+      'SELECT id, email FROM users WHERE id = $1',
+      [row.user_id]
+    );
+    if (userResult.rows.length === 0) {
+      await client.query('DELETE FROM refresh_tokens WHERE family_id = $1', [row.family_id]);
+      await client.query('COMMIT');
+      res.status(401).json({ error: 'User not found' });
+      return;
+    }
+    const user = userResult.rows[0];
+
+    const newRefreshToken = await makeRefreshToken(user.id, row.family_id, client);
+    const accessToken = makeAccessToken(user.id, user.email);
+
+    await client.query('COMMIT');
+    res.json({ accessToken, refreshToken: newRefreshToken });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
   }
-
-  const tokenRow = result.rows[0];
-  await pool.query('DELETE FROM refresh_tokens WHERE id = $1', [tokenRow.id]);
-
-  const userResult = await pool.query(
-    'SELECT id, email FROM users WHERE id = $1',
-    [tokenRow.user_id]
-  );
-  if (userResult.rows.length === 0) {
-    res.status(401).json({ error: 'User not found' });
-    return;
-  }
-  const user = userResult.rows[0];
-
-  const accessToken = makeAccessToken(user.id, user.email);
-  const newRefreshToken = await makeRefreshToken(user.id);
-
-  res.json({ accessToken, refreshToken: newRefreshToken });
 });
 
 router.post('/logout', authenticate, async (req: AuthRequest, res: Response) => {
   const { refreshToken } = req.body;
-  if (refreshToken) {
+  if (refreshToken && typeof refreshToken === 'string') {
     const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
-    await pool.query('DELETE FROM refresh_tokens WHERE token_hash = $1', [tokenHash]);
+    // Wipe the whole family so all sibling tokens (other tabs, devices that
+    // shared this chain) also lose access.
+    await pool.query(
+      `DELETE FROM refresh_tokens
+       WHERE family_id = (
+         SELECT family_id FROM refresh_tokens WHERE token_hash = $1
+       )`,
+      [tokenHash]
+    );
   }
   res.status(204).send();
 });

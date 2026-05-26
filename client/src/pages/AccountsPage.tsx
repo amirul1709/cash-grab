@@ -33,7 +33,13 @@ function AccountModal({
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError('');
-    save.mutate({ name, type, balance: parseFloat(balance), currency });
+    // Balance is only settable at create time; afterwards it's derived from
+    // transactions. Server rejects unknown keys, so don't send it on edit.
+    const parsedBalance = parseFloat(balance);
+    const payload: AccountPayload = initial
+      ? { name, type, currency }
+      : { name, type, balance: Number.isFinite(parsedBalance) ? parsedBalance : 0, currency };
+    save.mutate(payload);
   }
 
   return (
@@ -65,16 +71,18 @@ function AccountModal({
               ))}
             </select>
           </div>
-          <div>
-            <label className="block text-[9px] font-mono tracking-wider uppercase text-gray-400 mb-2">Starting Balance</label>
-            <input
-              type="number"
-              step="0.01"
-              value={balance}
-              onChange={(e) => setBal(e.target.value)}
-              className="w-full bg-transparent border-0 border-b border-cream-300 pb-2 text-sm text-gray-900 focus:outline-none focus:border-gray-900 transition-colors"
-            />
-          </div>
+          {!initial && (
+            <div>
+              <label className="block text-[9px] font-mono tracking-wider uppercase text-gray-400 mb-2">Starting Balance</label>
+              <input
+                type="number"
+                step="0.01"
+                value={balance}
+                onChange={(e) => setBal(e.target.value)}
+                className="w-full bg-transparent border-0 border-b border-cream-300 pb-2 text-sm text-gray-900 focus:outline-none focus:border-gray-900 transition-colors"
+              />
+            </div>
+          )}
           <div>
             <label className="block text-[9px] font-mono tracking-wider uppercase text-gray-400 mb-2">Currency</label>
             <input

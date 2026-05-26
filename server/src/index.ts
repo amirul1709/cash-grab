@@ -1,7 +1,9 @@
 import 'express-async-errors';
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import dotenv from 'dotenv';
+import { z } from 'zod';
 import { runMigrations } from './db/migrate';
 import authRouter from './routes/auth';
 import accountsRouter from './routes/accounts';
@@ -13,10 +15,34 @@ import { errorHandler } from './middleware/errorHandler';
 
 dotenv.config();
 
-const app = express();
-const PORT = process.env.PORT || 3001;
+// Fail fast at boot if required secrets are missing — otherwise jwt.sign()
+// would silently sign tokens with the string "undefined", which is forgeable.
+const envSchema = z.object({
+  DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
+  JWT_ACCESS_SECRET: z.string().min(32, 'JWT_ACCESS_SECRET must be at least 32 chars'),
+  CLIENT_URL: z.string().url().default('http://localhost:5173'),
+  PORT: z.string().regex(/^\d+$/).default('3001'),
+});
 
-app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:5173', credentials: true }));
+const envResult = envSchema.safeParse(process.env);
+if (!envResult.success) {
+  console.error('Invalid environment configuration:');
+  for (const issue of envResult.error.issues) {
+    console.error(`  - ${issue.path.join('.')}: ${issue.message}`);
+  }
+  process.exit(1);
+}
+const env = envResult.data;
+
+const app = express();
+const PORT = parseInt(env.PORT, 10);
+
+// Required if deployed behind a reverse proxy (Railway/Render/Heroku/etc.)
+// so req.ip reflects the real client and rate limiting keys correctly.
+app.set('trust proxy', 1);
+
+app.use(helmet());
+app.use(cors({ origin: env.CLIENT_URL, credentials: true }));
 app.use(express.json());
 
 app.use('/api/auth', authRouter);
@@ -33,4 +59,7 @@ async function start() {
   app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
 }
 
-start().catch(console.error);
+start().catch((err) => {
+  console.error('Server failed to start:', err);
+  process.exit(1);
+});

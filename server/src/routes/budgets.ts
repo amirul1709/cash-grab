@@ -13,17 +13,44 @@ const budgetSchema = z.object({
   start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
 });
 
+async function categoryBelongsToUser(categoryId: number, userId: number): Promise<boolean> {
+  const r = await pool.query(
+    'SELECT id FROM categories WHERE id = $1 AND user_id = $2',
+    [categoryId, userId]
+  );
+  return r.rows.length > 0;
+}
+
+/**
+ * "spent" honors the budget's period and start_date:
+ *
+ *   - weekly  → spend since the most recent Monday OR start_date, whichever is later
+ *   - monthly → spend since the 1st of the month OR start_date, whichever is later
+ *
+ * GREATEST(start_date, period_start) means a budget created mid-period only
+ * counts transactions on/after its start, not the whole period.
+ */
+const SPENT_EXPR = `
+  COALESCE((
+    SELECT SUM(t.amount)
+    FROM transactions t
+    WHERE t.category_id = b.category_id
+      AND t.user_id     = b.user_id
+      AND t.type        = 'expense'
+      AND t.date >= GREATEST(
+        b.start_date,
+        CASE WHEN b.period = 'weekly'
+             THEN date_trunc('week',  CURRENT_DATE)::date
+             ELSE date_trunc('month', CURRENT_DATE)::date
+        END
+      )
+  ), 0) AS spent
+`;
+
 router.get('/', async (req: AuthRequest, res: Response) => {
   const result = await pool.query(
     `SELECT b.*, c.name AS category_name, c.color AS category_color,
-            COALESCE((
-              SELECT SUM(t.amount)
-              FROM transactions t
-              WHERE t.category_id = b.category_id
-                AND t.user_id = b.user_id
-                AND t.type = 'expense'
-                AND t.date >= date_trunc('month', CURRENT_DATE)
-            ), 0) AS spent
+            ${SPENT_EXPR}
      FROM budgets b
      JOIN categories c ON b.category_id = c.id
      WHERE b.user_id = $1
@@ -36,11 +63,7 @@ router.get('/', async (req: AuthRequest, res: Response) => {
 router.post('/', async (req: AuthRequest, res: Response) => {
   const body = budgetSchema.parse(req.body);
 
-  const catCheck = await pool.query(
-    'SELECT id FROM categories WHERE id = $1 AND user_id = $2',
-    [body.category_id, req.user!.id]
-  );
-  if (catCheck.rows.length === 0) {
+  if (!(await categoryBelongsToUser(body.category_id, req.user!.id))) {
     res.status(404).json({ error: 'Category not found' });
     return;
   }
@@ -53,10 +76,22 @@ router.post('/', async (req: AuthRequest, res: Response) => {
 });
 
 router.put('/:id', async (req: AuthRequest, res: Response) => {
+  const id = parseInt(req.params.id, 10);
+  if (!Number.isFinite(id) || id < 1) {
+    res.status(400).json({ error: 'Invalid id' });
+    return;
+  }
+
   const body = budgetSchema.parse(req.body);
+
+  if (!(await categoryBelongsToUser(body.category_id, req.user!.id))) {
+    res.status(404).json({ error: 'Category not found' });
+    return;
+  }
+
   const result = await pool.query(
     'UPDATE budgets SET category_id=$1, amount=$2, period=$3, start_date=$4 WHERE id=$5 AND user_id=$6 RETURNING *',
-    [body.category_id, body.amount, body.period, body.start_date, req.params.id, req.user!.id]
+    [body.category_id, body.amount, body.period, body.start_date, id, req.user!.id]
   );
   if (result.rows.length === 0) {
     res.status(404).json({ error: 'Budget not found' });
@@ -66,9 +101,15 @@ router.put('/:id', async (req: AuthRequest, res: Response) => {
 });
 
 router.delete('/:id', async (req: AuthRequest, res: Response) => {
+  const id = parseInt(req.params.id, 10);
+  if (!Number.isFinite(id) || id < 1) {
+    res.status(400).json({ error: 'Invalid id' });
+    return;
+  }
+
   const result = await pool.query(
     'DELETE FROM budgets WHERE id = $1 AND user_id = $2 RETURNING id',
-    [req.params.id, req.user!.id]
+    [id, req.user!.id]
   );
   if (result.rows.length === 0) {
     res.status(404).json({ error: 'Budget not found' });
