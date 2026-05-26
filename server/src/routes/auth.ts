@@ -25,7 +25,9 @@ const isProd = process.env.NODE_ENV === 'production';
 const baseCookieOptions: CookieOptions = {
   httpOnly: true,
   secure: isProd,
-  sameSite: 'strict',
+  // 'none' is required for cross-origin deployments (Vercel + Railway).
+  // 'strict' silently blocks cookies when client and server are on different domains.
+  sameSite: isProd ? 'none' : 'strict',
 };
 
 const accessCookieOptions: CookieOptions = {
