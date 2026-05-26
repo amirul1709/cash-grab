@@ -239,8 +239,8 @@ router.post('/logout', authenticate, async (req: AuthRequest, res: Response) => 
       [tokenHash]
     );
   }
-  res.clearCookie('access_token', { path: '/' });
-  res.clearCookie('refresh_token', { path: '/api/auth/refresh' });
+  res.clearCookie('access_token', accessCookieOptions);
+  res.clearCookie('refresh_token', refreshCookieOptions);
   res.status(204).send();
 });
 
