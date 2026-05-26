@@ -37,28 +37,28 @@ function AccountModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 overflow-y-auto">
-      <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full max-w-sm max-h-[90vh] overflow-y-auto">
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-          <h2 className="font-semibold">{initial ? 'Edit' : 'New'} Account</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">✕</button>
+    <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 overflow-y-auto">
+      <div className="bg-white rounded-t-2xl sm:rounded-xl shadow-xl w-full max-w-sm max-h-[90vh] overflow-y-auto">
+        <div className="px-6 py-4 border-b border-cream-200 flex items-center justify-between">
+          <p className="text-[10px] font-mono tracking-wider uppercase text-gray-400">{initial ? 'Edit' : 'New'} Account</p>
+          <button onClick={onClose} className="text-gray-300 hover:text-gray-600 transition-colors text-sm">✕</button>
         </div>
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Name</label>
+            <label className="block text-[9px] font-mono tracking-wider uppercase text-gray-400 mb-2">Name</label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full bg-transparent border-0 border-b border-cream-300 pb-2 text-sm text-gray-900 focus:outline-none focus:border-gray-900 transition-colors"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Type</label>
+            <label className="block text-[9px] font-mono tracking-wider uppercase text-gray-400 mb-2">Type</label>
             <select
               value={type}
               onChange={(e) => setType(e.target.value as Account['type'])}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full bg-transparent border-0 border-b border-cream-300 pb-2 text-sm text-gray-900 focus:outline-none focus:border-gray-900 transition-colors"
             >
               {ACCOUNT_TYPES.map((t) => (
                 <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>
@@ -66,29 +66,29 @@ function AccountModal({
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Starting Balance</label>
+            <label className="block text-[9px] font-mono tracking-wider uppercase text-gray-400 mb-2">Starting Balance</label>
             <input
               type="number"
               step="0.01"
               value={balance}
               onChange={(e) => setBal(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full bg-transparent border-0 border-b border-cream-300 pb-2 text-sm text-gray-900 focus:outline-none focus:border-gray-900 transition-colors"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Currency</label>
+            <label className="block text-[9px] font-mono tracking-wider uppercase text-gray-400 mb-2">Currency</label>
             <input
               value={currency}
               onChange={(e) => setCur(e.target.value.toUpperCase().slice(0, 3))}
               maxLength={3}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full bg-transparent border-0 border-b border-cream-300 pb-2 text-sm text-gray-900 focus:outline-none focus:border-gray-900 transition-colors"
             />
           </div>
-          {error && <p className="text-sm text-red-500">{error}</p>}
+          {error && <p className="text-xs text-red-500 font-mono">{error}</p>}
           <button
             type="submit"
             disabled={save.isPending}
-            className="w-full bg-indigo-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+            className="w-full bg-[#111111] text-white py-3 text-xs font-mono tracking-wider uppercase hover:bg-gray-800 disabled:opacity-40 transition-colors rounded-md"
           >
             {save.isPending ? 'Saving…' : 'Save'}
           </button>
@@ -124,10 +124,13 @@ export default function AccountsPage() {
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Accounts</h1>
+        <div className="flex items-baseline gap-3">
+          <span className="font-mono text-[10px] text-gray-400">01 /</span>
+          <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 tracking-tight">Accounts</h1>
+        </div>
         <button
           onClick={() => setModal('create')}
-          className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors whitespace-nowrap"
+          className="bg-[#111111] text-white px-4 py-2 rounded-md text-xs font-mono tracking-wider uppercase hover:bg-gray-800 transition-colors whitespace-nowrap"
         >
           + Add Account
         </button>
@@ -135,18 +138,18 @@ export default function AccountsPage() {
 
       {isLoading && (
         <div className="flex justify-center py-12">
-          <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+          <div className="w-5 h-5 border-2 border-gold-500 border-t-transparent rounded-full animate-spin" />
         </div>
       )}
 
       {!isLoading && accounts.length === 0 && (
         <div className="text-center py-16 text-gray-400">
-          <p className="text-lg mb-2">No accounts yet</p>
+          <p className="text-base mb-1">No accounts yet</p>
           <p className="text-sm">Add your first account to get started</p>
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
         {accounts.map((a) => (
           <AccountCard
             key={a.id}

@@ -9,17 +9,17 @@ import TransactionForm from '../components/TransactionForm';
 export default function TransactionsPage() {
   const qc = useQueryClient();
 
-  const [page, setPage]         = useState(1);
-  const [from, setFrom]         = useState('');
-  const [to, setTo]             = useState('');
-  const [modal, setModal]       = useState<Transaction | 'create' | null>(null);
+  const [page, setPage]   = useState(1);
+  const [from, setFrom]   = useState('');
+  const [to, setTo]       = useState('');
+  const [modal, setModal] = useState<Transaction | 'create' | null>(null);
 
   const { data: txData, isLoading } = useQuery({
     queryKey: ['transactions', page, from, to],
     queryFn: () => transactionsApi.list({ page, from: from || undefined, to: to || undefined }),
   });
 
-  const { data: accounts = [] } = useQuery({ queryKey: ['accounts'],   queryFn: accountsApi.list });
+  const { data: accounts = [] }   = useQuery({ queryKey: ['accounts'],   queryFn: accountsApi.list });
   const { data: categories = [] } = useQuery({ queryKey: ['categories'], queryFn: categoriesApi.list });
 
   const createMutation = useMutation({
@@ -52,50 +52,51 @@ export default function TransactionsPage() {
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Transactions</h1>
+        <div className="flex items-baseline gap-3">
+          <span className="font-mono text-[10px] text-gray-400">01 /</span>
+          <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 tracking-tight">Transactions</h1>
+        </div>
         <button
           onClick={() => setModal('create')}
-          className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors whitespace-nowrap"
+          className="bg-[#111111] text-white px-4 py-2 rounded-md text-xs font-mono tracking-wider uppercase hover:bg-gray-800 transition-colors whitespace-nowrap"
         >
           + Add Transaction
         </button>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap gap-3 items-end">
         <div className="flex-1 min-w-[140px] sm:flex-none">
-          <label className="block text-xs text-gray-500 mb-1">From</label>
+          <label className="block text-[9px] font-mono tracking-wider uppercase text-gray-400 mb-2">From</label>
           <input
             type="date"
             value={from}
             onChange={(e) => { setFrom(e.target.value); setPage(1); }}
-            className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full bg-transparent border-0 border-b border-cream-300 pb-1.5 text-sm text-gray-900 focus:outline-none focus:border-gray-900 transition-colors"
           />
         </div>
         <div className="flex-1 min-w-[140px] sm:flex-none">
-          <label className="block text-xs text-gray-500 mb-1">To</label>
+          <label className="block text-[9px] font-mono tracking-wider uppercase text-gray-400 mb-2">To</label>
           <input
             type="date"
             value={to}
             onChange={(e) => { setTo(e.target.value); setPage(1); }}
-            className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full bg-transparent border-0 border-b border-cream-300 pb-1.5 text-sm text-gray-900 focus:outline-none focus:border-gray-900 transition-colors"
           />
         </div>
         {(from || to) && (
-          <div className="flex items-end">
-            <button
-              onClick={() => { setFrom(''); setTo(''); setPage(1); }}
-              className="text-xs text-gray-500 hover:text-gray-700 mb-0.5"
-            >
-              Clear
-            </button>
-          </div>
+          <button
+            onClick={() => { setFrom(''); setTo(''); setPage(1); }}
+            className="text-[9px] font-mono tracking-wider uppercase text-gray-400 hover:text-gray-700 transition-colors pb-1.5"
+          >
+            Clear
+          </button>
         )}
       </div>
 
       {isLoading ? (
         <div className="flex justify-center py-12">
-          <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+          <div className="w-5 h-5 border-2 border-gold-500 border-t-transparent rounded-full animate-spin" />
         </div>
       ) : (
         <TransactionTable

@@ -27,10 +27,7 @@ export default function TransactionForm({ initial, accounts, categories, onSubmi
 
   const firstRender = useRef(true);
   useEffect(() => {
-    if (firstRender.current) {
-      firstRender.current = false;
-      return;
-    }
+    if (firstRender.current) { firstRender.current = false; return; }
     setCategoryId('');
   }, [type]);
 
@@ -59,36 +56,39 @@ export default function TransactionForm({ initial, accounts, categories, onSubmi
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 overflow-y-auto">
-      <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-          <h2 className="font-semibold text-gray-900">{initial ? 'Edit' : 'New'} Transaction</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-lg">✕</button>
+    <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 overflow-y-auto">
+      <div className="bg-white rounded-t-2xl sm:rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <div className="px-6 py-4 border-b border-cream-200 flex items-center justify-between">
+          <p className="text-[10px] font-mono tracking-wider uppercase text-gray-400">{initial ? 'Edit' : 'New'} Transaction</p>
+          <button onClick={onClose} className="text-gray-300 hover:text-gray-600 transition-colors text-sm">✕</button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {/* Type toggle */}
-          <div className="flex rounded-lg overflow-hidden border border-gray-200">
-            {(['expense', 'income'] as const).map((t) => (
-              <button
-                key={t}
-                type="button"
-                onClick={() => setType(t)}
-                className={`flex-1 py-2 text-sm font-medium transition-colors ${
-                  type === t
-                    ? t === 'income'
-                      ? 'bg-green-500 text-white'
-                      : 'bg-red-500 text-white'
-                    : 'bg-white text-gray-500 hover:bg-gray-50'
-                }`}
-              >
-                {t.charAt(0).toUpperCase() + t.slice(1)}
-              </button>
-            ))}
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          {/* Type toggle — semantic colors kept for income/expense clarity */}
+          <div>
+            <label className="block text-[9px] font-mono tracking-wider uppercase text-gray-400 mb-2">Type</label>
+            <div className="flex rounded-md overflow-hidden border border-cream-300">
+              {(['expense', 'income'] as const).map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setType(t)}
+                  className={`flex-1 py-2 text-xs font-mono tracking-wider uppercase transition-colors ${
+                    type === t
+                      ? t === 'income'
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-red-500 text-white'
+                      : 'bg-white text-gray-400 hover:text-gray-700'
+                  }`}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Amount</label>
+            <label className="block text-[9px] font-mono tracking-wider uppercase text-gray-400 mb-2">Amount</label>
             <input
               type="number"
               min="0.01"
@@ -96,17 +96,17 @@ export default function TransactionForm({ initial, accounts, categories, onSubmi
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="0.00"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full bg-transparent border-0 border-b border-cream-300 pb-2 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:border-gray-900 transition-colors"
               required
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Account</label>
+            <label className="block text-[9px] font-mono tracking-wider uppercase text-gray-400 mb-2">Account</label>
             <select
               value={accountId}
               onChange={(e) => setAccountId(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full bg-transparent border-0 border-b border-cream-300 pb-2 text-sm text-gray-900 focus:outline-none focus:border-gray-900 transition-colors"
             >
               <option value="">Select account</option>
               {accounts.map((a) => (
@@ -116,11 +116,11 @@ export default function TransactionForm({ initial, accounts, categories, onSubmi
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Category</label>
+            <label className="block text-[9px] font-mono tracking-wider uppercase text-gray-400 mb-2">Category</label>
             <select
               value={categoryId}
               onChange={(e) => setCategoryId(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full bg-transparent border-0 border-b border-cream-300 pb-2 text-sm text-gray-900 focus:outline-none focus:border-gray-900 transition-colors"
             >
               <option value="">No category</option>
               {filteredCategories.map((c) => (
@@ -130,33 +130,33 @@ export default function TransactionForm({ initial, accounts, categories, onSubmi
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Date</label>
+            <label className="block text-[9px] font-mono tracking-wider uppercase text-gray-400 mb-2">Date</label>
             <input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full bg-transparent border-0 border-b border-cream-300 pb-2 text-sm text-gray-900 focus:outline-none focus:border-gray-900 transition-colors"
               required
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
+            <label className="block text-[9px] font-mono tracking-wider uppercase text-gray-400 mb-2">Description</label>
             <input
               type="text"
               value={description}
               onChange={(e) => setDesc(e.target.value)}
               placeholder="Optional note"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full bg-transparent border-0 border-b border-cream-300 pb-2 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:border-gray-900 transition-colors"
             />
           </div>
 
-          {error && <p className="text-sm text-red-500">{error}</p>}
+          {error && <p className="text-xs text-red-500 font-mono">{error}</p>}
 
           <button
             type="submit"
             disabled={saving}
-            className="w-full bg-indigo-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+            className="w-full bg-[#111111] text-white py-3 text-xs font-mono tracking-wider uppercase hover:bg-gray-800 disabled:opacity-40 transition-colors rounded-md"
           >
             {saving ? 'Saving…' : 'Save Transaction'}
           </button>
