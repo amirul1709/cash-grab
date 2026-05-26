@@ -41,8 +41,7 @@ export default function DashboardPage() {
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8">
       {/* Page header */}
-      <div className="flex items-baseline gap-4">
-        <span className="font-mono text-[10px] text-gray-400">01 /</span>
+      <div>
         <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">Overview</h1>
       </div>
 
@@ -57,13 +56,13 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
         <div className="bg-white border border-cream-300 rounded-xl overflow-hidden">
           <div className="px-6 pt-5 pb-1 border-b border-cream-200">
-            <p className="text-[10px] font-mono tracking-editorial uppercase text-gray-400">02 / Spending Trends</p>
+            <p className="text-[10px] font-mono tracking-editorial uppercase text-gray-400">Spending Trends</p>
           </div>
           <SpendingChart data={data?.monthlyTrends ?? []} />
         </div>
         <div className="bg-white border border-cream-300 rounded-xl overflow-hidden">
           <div className="px-6 pt-5 pb-1 border-b border-cream-200">
-            <p className="text-[10px] font-mono tracking-editorial uppercase text-gray-400">03 / By Category</p>
+            <p className="text-[10px] font-mono tracking-editorial uppercase text-gray-400">By Category</p>
           </div>
           <CategoryBreakdown data={data?.topCategories ?? []} />
         </div>
@@ -71,9 +70,8 @@ export default function DashboardPage() {
 
       {/* Recent transactions */}
       <div className="bg-white border border-cream-300 rounded-xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-cream-200 flex items-baseline gap-3">
-          <span className="font-mono text-[10px] text-gray-400">04 /</span>
-          <h2 className="text-sm font-medium text-gray-700 tracking-tight">Recent Transactions</h2>
+        <div className="px-6 pt-5 pb-3 border-b border-cream-200">
+          <h2 className="text-[10px] font-mono tracking-editorial uppercase text-gray-400">Recent Transactions</h2>
         </div>
         <ul className="divide-y divide-cream-100">
           {(data?.recentTransactions ?? []).length === 0 && (

@@ -52,10 +52,7 @@ export default function TransactionsPage() {
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-baseline gap-3">
-          <span className="font-mono text-[10px] text-gray-400">01 /</span>
-          <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 tracking-tight">Transactions</h1>
-        </div>
+        <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 tracking-tight">Transactions</h1>
         <button
           onClick={() => setModal('create')}
           className="bg-[#111111] text-white px-4 py-2 rounded-md text-xs font-mono tracking-wider uppercase hover:bg-gray-800 transition-colors whitespace-nowrap"
