@@ -32,11 +32,11 @@ export const registerLimiter = rateLimit({
 });
 
 /**
- * 30 refresh calls / 15 min / IP. A normal client refreshes ~4×/hour (access
- * token TTL = 15 min); 30 gives ample headroom for retries and parallel tabs.
+ * 90 refresh calls / 15 min / IP. With 1-minute access tokens, an active user
+ * refreshes ~15×/15min; 90 gives headroom for ~4-6 parallel tabs plus retries.
  */
 export const refreshLimiter = rateLimit({
   ...common,
   windowMs: 15 * 60 * 1000,
-  limit: 30,
+  limit: 90,
 });

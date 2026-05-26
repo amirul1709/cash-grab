@@ -2,6 +2,7 @@ import 'express-async-errors';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import { z } from 'zod';
 import { runMigrations } from './db/migrate';
@@ -22,6 +23,7 @@ const envSchema = z.object({
   JWT_ACCESS_SECRET: z.string().min(32, 'JWT_ACCESS_SECRET must be at least 32 chars'),
   CLIENT_URL: z.string().url().default('http://localhost:5173'),
   PORT: z.string().regex(/^\d+$/).default('3001'),
+  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
 });
 
 const envResult = envSchema.safeParse(process.env);
@@ -41,9 +43,17 @@ const PORT = parseInt(env.PORT, 10);
 // so req.ip reflects the real client and rate limiting keys correctly.
 app.set('trust proxy', 1);
 
+if (env.NODE_ENV === 'production') {
+  app.use((req, res, next) => {
+    if (!req.secure) return res.redirect(301, `https://${req.headers.host}${req.url}`);
+    next();
+  });
+}
+
 app.use(helmet());
 app.use(cors({ origin: env.CLIENT_URL, credentials: true }));
 app.use(express.json());
+app.use(cookieParser());
 
 app.use('/api/auth', authRouter);
 app.use('/api/accounts', accountsRouter);
