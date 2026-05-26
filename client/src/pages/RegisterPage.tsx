@@ -29,14 +29,14 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left dark panel — hidden on mobile */}
-      <div className="hidden md:flex w-[45%] bg-[#111111] flex-col justify-between p-12">
+    <div className="min-h-screen flex flex-col md:flex-row">
+      {/* Dark panel — top on mobile, left on desktop */}
+      <div className="bg-[#111111] flex flex-col p-8 sm:p-10 md:p-12 md:w-[45%] md:justify-between gap-8 md:gap-0">
         <div>
           <span className="text-lg font-semibold text-gold-400 tracking-tight">Cash Grab</span>
           <p className="text-[10px] font-mono tracking-editorial uppercase text-white/30 mt-1">Finance Tracker</p>
         </div>
-        <div>
+        <div className="hidden md:block">
           <p className="text-3xl font-light text-white leading-snug tracking-tight">
             Take control of<br />your finances.
           </p>
@@ -44,19 +44,14 @@ export default function RegisterPage() {
             Set budgets, track spending, and understand where your money goes.
           </p>
         </div>
-        <p className="text-[10px] font-mono text-white/20 tracking-editorial uppercase">
+        <p className="hidden md:block text-[10px] font-mono text-white/20 tracking-editorial uppercase">
           &copy; {new Date().getFullYear()} Cash Grab
         </p>
       </div>
 
-      {/* Right form panel */}
-      <div className="flex-1 flex items-center justify-center bg-cream-100 px-6 py-12">
+      {/* Form panel — bottom on mobile, right on desktop */}
+      <div className="flex-1 flex items-start md:items-center justify-center bg-cream-100 px-6 pt-10 pb-10 md:py-12">
         <div className="w-full max-w-sm">
-          {/* Mobile brand */}
-          <div className="md:hidden mb-8">
-            <span className="text-lg font-semibold text-gray-900 tracking-tight">Cash Grab</span>
-          </div>
-
           <h1 className="text-2xl font-semibold text-gray-900 tracking-tight mb-1">Create account</h1>
           <p className="text-[10px] font-mono tracking-editorial uppercase text-gray-400 mb-8">
             Start tracking your finances
