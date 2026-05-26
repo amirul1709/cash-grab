@@ -31,10 +31,15 @@ router.post('/', async (req: AuthRequest, res: Response) => {
 });
 
 router.put('/:id', async (req: AuthRequest, res: Response) => {
+  const id = parseInt(req.params.id, 10);
+  if (!Number.isFinite(id) || id < 1) {
+    res.status(400).json({ error: 'Invalid id' });
+    return;
+  }
   const body = categorySchema.parse(req.body);
   const result = await pool.query(
     'UPDATE categories SET name=$1, type=$2, color=$3, icon=$4 WHERE id=$5 AND user_id=$6 RETURNING *',
-    [body.name, body.type, body.color, body.icon, req.params.id, req.user!.id]
+    [body.name, body.type, body.color, body.icon, id, req.user!.id]
   );
   if (result.rows.length === 0) {
     res.status(404).json({ error: 'Category not found' });
@@ -44,9 +49,14 @@ router.put('/:id', async (req: AuthRequest, res: Response) => {
 });
 
 router.delete('/:id', async (req: AuthRequest, res: Response) => {
+  const id = parseInt(req.params.id, 10);
+  if (!Number.isFinite(id) || id < 1) {
+    res.status(400).json({ error: 'Invalid id' });
+    return;
+  }
   const result = await pool.query(
     'DELETE FROM categories WHERE id = $1 AND user_id = $2 RETURNING id',
-    [req.params.id, req.user!.id]
+    [id, req.user!.id]
   );
   if (result.rows.length === 0) {
     res.status(404).json({ error: 'Category not found' });
