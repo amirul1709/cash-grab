@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, CookieOptions } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
@@ -14,8 +14,36 @@ const router = Router();
 // constant when the email doesn't exist (prevents user enumeration).
 const DUMMY_HASH = '$2b$12$CwTycUXWue0Thq9StjUM0uJ8e6Z6vQp1FQk5dXqXTQYqQ8eHvJTWS';
 
-const REFRESH_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-const ACCESS_TTL = '15m';
+const REFRESH_TTL_MS   = 5 * 60 * 1000;  // 5 minutes
+const REFRESH_TTL_SECS = 300;
+const ACCESS_TTL       = '1m';
+const ACCESS_TTL_MS    = 60_000;          // 1 minute
+const ACCESS_TTL_SECS  = 60;
+
+const isProd = process.env.NODE_ENV === 'production';
+
+const baseCookieOptions: CookieOptions = {
+  httpOnly: true,
+  secure: isProd,
+  sameSite: 'strict',
+};
+
+const accessCookieOptions: CookieOptions = {
+  ...baseCookieOptions,
+  path: '/',
+  maxAge: ACCESS_TTL_SECS * 1000,
+};
+
+const refreshCookieOptions: CookieOptions = {
+  ...baseCookieOptions,
+  path: '/api/auth/refresh',
+  maxAge: REFRESH_TTL_SECS * 1000,
+};
+
+function setAuthCookies(res: Response, accessToken: string, refreshToken: string): void {
+  res.cookie('access_token', accessToken, accessCookieOptions);
+  res.cookie('refresh_token', refreshToken, refreshCookieOptions);
+}
 
 const registerSchema = z.object({
   email: z.string().email(),
@@ -73,7 +101,8 @@ router.post('/register', registerLimiter, async (req: Request, res: Response) =>
   const accessToken = makeAccessToken(user.id, user.email);
   const refreshToken = await makeRefreshToken(user.id, crypto.randomUUID());
 
-  res.status(201).json({ accessToken, refreshToken, user });
+  setAuthCookies(res, accessToken, refreshToken);
+  res.status(201).json({ user, accessTokenExpiresAt: Date.now() + ACCESS_TTL_MS });
 });
 
 router.post('/login', loginLimiter, async (req: Request, res: Response) => {
@@ -94,10 +123,10 @@ router.post('/login', loginLimiter, async (req: Request, res: Response) => {
   const accessToken = makeAccessToken(user.id, user.email);
   const refreshToken = await makeRefreshToken(user.id, crypto.randomUUID());
 
+  setAuthCookies(res, accessToken, refreshToken);
   res.json({
-    accessToken,
-    refreshToken,
     user: { id: user.id, email: user.email, name: user.name, created_at: user.created_at },
+    accessTokenExpiresAt: Date.now() + ACCESS_TTL_MS,
   });
 });
 
@@ -114,7 +143,7 @@ router.post('/login', loginLimiter, async (req: Request, res: Response) => {
  * leave the user in a half-state (no token recorded).
  */
 router.post('/refresh', refreshLimiter, async (req: Request, res: Response) => {
-  const { refreshToken } = req.body;
+  const refreshToken = req.cookies?.refresh_token;
   if (!refreshToken || typeof refreshToken !== 'string') {
     res.status(401).json({ error: 'No refresh token' });
     return;
@@ -176,7 +205,8 @@ router.post('/refresh', refreshLimiter, async (req: Request, res: Response) => {
     const accessToken = makeAccessToken(user.id, user.email);
 
     await client.query('COMMIT');
-    res.json({ accessToken, refreshToken: newRefreshToken });
+    setAuthCookies(res, accessToken, newRefreshToken);
+    res.json({ accessTokenExpiresAt: Date.now() + ACCESS_TTL_MS });
   } catch (err) {
     await client.query('ROLLBACK');
     throw err;
@@ -186,7 +216,7 @@ router.post('/refresh', refreshLimiter, async (req: Request, res: Response) => {
 });
 
 router.post('/logout', authenticate, async (req: AuthRequest, res: Response) => {
-  const { refreshToken } = req.body;
+  const refreshToken = req.cookies?.refresh_token;
   if (refreshToken && typeof refreshToken === 'string') {
     const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
     // Wipe the whole family so all sibling tokens (other tabs, devices that
@@ -199,6 +229,8 @@ router.post('/logout', authenticate, async (req: AuthRequest, res: Response) => 
       [tokenHash]
     );
   }
+  res.clearCookie('access_token', { path: '/' });
+  res.clearCookie('refresh_token', { path: '/api/auth/refresh' });
   res.status(204).send();
 });
 

@@ -1,6 +1,6 @@
 import { createContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import api from '../api/axios';
-import { setToken, getToken } from '../api/tokenStore';
+import { setExpiry, clearExpiry } from '../api/tokenStore';
 
 export interface User {
   id: number;
@@ -24,49 +24,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const stored = localStorage.getItem('refreshToken');
-    if (!stored) {
-      setIsLoading(false);
-      return;
-    }
-
+    // On mount, attempt a silent refresh using the HttpOnly cookie.
+    // If the cookie is absent or expired the server returns 401 and we stay logged out.
     api
-      .post('/auth/refresh', { refreshToken: stored })
+      .post('/auth/refresh')
       .then((res) => {
-        setToken(res.data.accessToken);
-        localStorage.setItem('refreshToken', res.data.refreshToken);
+        setExpiry(res.data.accessTokenExpiresAt as number);
         return api.get<User>('/auth/me');
       })
       .then((res) => setUser(res.data))
-      .catch(() => localStorage.removeItem('refreshToken'))
+      .catch(() => {
+        // No valid cookie — user is not authenticated.
+      })
       .finally(() => setIsLoading(false));
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
     const res = await api.post('/auth/login', { email, password });
-    setToken(res.data.accessToken);
-    localStorage.setItem('refreshToken', res.data.refreshToken);
+    setExpiry(res.data.accessTokenExpiresAt as number);
     setUser(res.data.user);
   }, []);
 
   const register = useCallback(async (email: string, name: string, password: string) => {
     const res = await api.post('/auth/register', { email, name, password });
-    setToken(res.data.accessToken);
-    localStorage.setItem('refreshToken', res.data.refreshToken);
+    setExpiry(res.data.accessTokenExpiresAt as number);
     setUser(res.data.user);
   }, []);
 
   const logout = useCallback(async () => {
-    const refreshToken = localStorage.getItem('refreshToken');
-    if (getToken()) {
-      try {
-        await api.post('/auth/logout', { refreshToken });
-      } catch {
-        // best-effort
-      }
+    try {
+      await api.post('/auth/logout');
+    } catch {
+      // best-effort
     }
-    setToken(null);
-    localStorage.removeItem('refreshToken');
+    clearExpiry();
     setUser(null);
   }, []);
 

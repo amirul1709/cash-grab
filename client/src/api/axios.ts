@@ -1,17 +1,26 @@
 import axios from 'axios';
-import { getToken, setToken } from './tokenStore';
+import { isTokenExpiring, setExpiry, clearExpiry } from './tokenStore';
 
-const api = axios.create({ baseURL: import.meta.env.VITE_API_URL ?? '/api' });
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL ?? '/api',
+  withCredentials: true,
+});
 
-api.interceptors.request.use((config) => {
-  const token = getToken();
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+let refreshPromise: Promise<void> | null = null;
+
+// Proactive refresh: fire before token expires to avoid mid-flight 401s.
+api.interceptors.request.use(async (config) => {
+  const isRefreshEndpoint = config.url?.includes('/auth/refresh');
+  if (!isRefreshEndpoint && isTokenExpiring()) {
+    if (!refreshPromise) {
+      refreshPromise = doRefresh().finally(() => {
+        refreshPromise = null;
+      });
+    }
+    await refreshPromise;
   }
   return config;
 });
-
-let refreshPromise: Promise<string> | null = null;
 
 api.interceptors.response.use(
   (response) => response,
@@ -19,6 +28,7 @@ api.interceptors.response.use(
     const original = error.config;
     const isRefreshEndpoint = original?.url?.includes('/auth/refresh');
 
+    // Reactive fallback: catch 401s that slip through (clock skew, edge cases).
     if (error.response?.status === 401 && !original._retry && !isRefreshEndpoint) {
       original._retry = true;
 
@@ -29,12 +39,10 @@ api.interceptors.response.use(
       }
 
       try {
-        const newToken = await refreshPromise;
-        original.headers.Authorization = `Bearer ${newToken}`;
+        await refreshPromise;
         return api(original);
       } catch {
-        setToken(null);
-        localStorage.removeItem('refreshToken');
+        clearExpiry();
         window.location.href = '/login';
         return Promise.reject(error);
       }
@@ -44,14 +52,9 @@ api.interceptors.response.use(
   }
 );
 
-async function doRefresh(): Promise<string> {
-  const refreshToken = localStorage.getItem('refreshToken');
-  if (!refreshToken) throw new Error('No refresh token');
-
-  const res = await api.post('/auth/refresh', { refreshToken });
-  setToken(res.data.accessToken);
-  localStorage.setItem('refreshToken', res.data.refreshToken);
-  return res.data.accessToken as string;
+async function doRefresh(): Promise<void> {
+  const res = await api.post('/auth/refresh');
+  setExpiry(res.data.accessTokenExpiresAt as number);
 }
 
 export default api;
