@@ -69,7 +69,7 @@ export default function Layout() {
   return (
     <div className="flex min-h-screen">
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex w-56 bg-[#111111] text-white flex-col shrink-0 border-r border-white/5">
+      <aside className="hidden md:flex md:sticky md:top-0 md:h-screen w-56 bg-[#111111] text-white flex-col shrink-0 border-r border-white/5">
         {sidebar}
       </aside>
 
