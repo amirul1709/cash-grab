@@ -2,6 +2,39 @@ import { useState, FormEvent } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { categoriesApi, type Category, type CategoryPayload } from '../api/categories';
 
+function CategoryList({
+  items,
+  label,
+  onEdit,
+  onDelete,
+}: {
+  items: Category[];
+  label: string;
+  onEdit: (c: Category) => void;
+  onDelete: (id: number) => void;
+}) {
+  return (
+    <div>
+      <p className="text-[9px] font-mono tracking-wider uppercase text-gray-400 mb-3">{label}</p>
+      {items.length === 0 && <p className="text-sm text-gray-400 mb-4">None yet</p>}
+      <div className="space-y-2">
+        {items.map((c) => (
+          <div key={c.id} className="flex items-center justify-between bg-white rounded-xl border border-cream-300 px-4 py-3 hover:border-cream-400 transition-colors">
+            <div className="flex items-center gap-3">
+              <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: c.color }} />
+              <span className="text-sm text-gray-900">{c.name}</span>
+            </div>
+            <div className="flex gap-4">
+              <button onClick={() => onEdit(c)} className="text-[10px] font-mono tracking-wider uppercase text-gray-400 hover:text-gray-900 transition-colors">Edit</button>
+              <button onClick={() => onDelete(c.id)} className="text-[10px] font-mono tracking-wider uppercase text-red-400 hover:text-red-600 transition-colors">Delete</button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 const COLORS = [
   '#6366f1', '#f87171', '#34d399', '#fbbf24', '#60a5fa',
   '#a78bfa', '#f472b6', '#2dd4bf', '#fb923c', '#4ade80',
@@ -116,29 +149,6 @@ export default function CategoriesPage() {
     if (confirm('Delete this category?')) deleteMutation.mutate(id);
   }
 
-  function CategoryList({ items, label }: { items: Category[]; label: string }) {
-    return (
-      <div>
-        <p className="text-[9px] font-mono tracking-wider uppercase text-gray-400 mb-3">{label}</p>
-        {items.length === 0 && <p className="text-sm text-gray-400 mb-4">None yet</p>}
-        <div className="space-y-2">
-          {items.map((c) => (
-            <div key={c.id} className="flex items-center justify-between bg-white rounded-xl border border-cream-300 px-4 py-3 hover:border-cream-400 transition-colors">
-              <div className="flex items-center gap-3">
-                <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: c.color }} />
-                <span className="text-sm text-gray-900">{c.name}</span>
-              </div>
-              <div className="flex gap-4">
-                <button onClick={() => setModal(c)} className="text-[10px] font-mono tracking-wider uppercase text-gray-400 hover:text-gray-900 transition-colors">Edit</button>
-                <button onClick={() => handleDelete(c.id)} className="text-[10px] font-mono tracking-wider uppercase text-red-400 hover:text-red-600 transition-colors">Delete</button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -157,8 +167,8 @@ export default function CategoriesPage() {
         </div>
       ) : (
         <div className="space-y-8">
-          <CategoryList items={expense} label="Expense Categories" />
-          <CategoryList items={income}  label="Income Categories"  />
+          <CategoryList items={expense} label="Expense Categories" onEdit={setModal} onDelete={handleDelete} />
+          <CategoryList items={income}  label="Income Categories"  onEdit={setModal} onDelete={handleDelete} />
         </div>
       )}
 

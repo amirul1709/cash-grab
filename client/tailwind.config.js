@@ -13,6 +13,7 @@ export default {
           100: '#F8F6F2',
           200: '#EDE9E2',
           300: '#DDD8CE',
+          400: '#CEC8BC',
         },
         gold: {
           400: '#D4A853',

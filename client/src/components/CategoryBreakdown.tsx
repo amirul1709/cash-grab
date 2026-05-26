@@ -38,7 +38,7 @@ export default function CategoryBreakdown({ data }: Props) {
                 strokeWidth={2}
               >
                 {formatted.map((entry, i) => (
-                  <Cell key={i} fill={entry.color} />
+                  <Cell key={`cell-${i}`} fill={entry.color} />
                 ))}
               </Pie>
               <Tooltip

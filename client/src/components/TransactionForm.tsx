@@ -19,7 +19,7 @@ export default function TransactionForm({ initial, accounts, categories, onSubmi
   const [categoryId, setCategoryId] = useState(initial?.category_id?.toString() ?? '');
   const [amount, setAmount]       = useState(initial ? parseFloat(initial.amount).toString() : '');
   const [description, setDesc]    = useState(initial?.description ?? '');
-  const [date, setDate]           = useState(initial?.date ?? today);
+  const [date, setDate]           = useState(initial?.date ? initial.date.slice(0, 10) : today);
   const [saving, setSaving]       = useState(false);
   const [error, setError]         = useState('');
 
