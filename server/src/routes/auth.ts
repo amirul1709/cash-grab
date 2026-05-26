@@ -14,8 +14,8 @@ const router = Router();
 // constant when the email doesn't exist (prevents user enumeration).
 const DUMMY_HASH = '$2b$12$CwTycUXWue0Thq9StjUM0uJ8e6Z6vQp1FQk5dXqXTQYqQ8eHvJTWS';
 
-const REFRESH_TTL_MS   = 5 * 60 * 1000;  // 5 minutes
-const REFRESH_TTL_SECS = 300;
+const REFRESH_TTL_MS   = 7 * 24 * 60 * 60 * 1000;  // 7 days
+const REFRESH_TTL_SECS = 7 * 24 * 60 * 60;
 const ACCESS_TTL       = '1m';
 const ACCESS_TTL_MS    = 60_000;          // 1 minute
 const ACCESS_TTL_SECS  = 60;
@@ -175,9 +175,17 @@ router.post('/refresh', refreshLimiter, async (req: Request, res: Response) => {
 
     // Reuse detection: the token's been redeemed before. Treat as compromised.
     if (row.used_at !== null) {
-      await client.query('DELETE FROM refresh_tokens WHERE family_id = $1', [row.family_id]);
+      const ageMs = Date.now() - new Date(row.used_at).getTime();
+      if (ageMs > 10_000) {
+        // Redeemed >10s ago — genuine reuse/theft. Nuke the family.
+        await client.query('DELETE FROM refresh_tokens WHERE family_id = $1', [row.family_id]);
+        await client.query('COMMIT');
+        res.status(401).json({ error: 'Token reuse detected — please log in again' });
+        return;
+      }
+      // Redeemed within 10s — likely a multi-tab race, not theft.
       await client.query('COMMIT');
-      res.status(401).json({ error: 'Token reuse detected — please log in again' });
+      res.status(409).json({ error: 'Refresh in progress, retry shortly' });
       return;
     }
 
