@@ -24,8 +24,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // On mount, attempt a silent refresh using the HttpOnly cookie.
-    // If the cookie is absent or expired the server returns 401 and we stay logged out.
+    // Skip the silent refresh entirely when the advisory `has_session` cookie is absent
+    // or empty. Without this hint, logged-out visitors would log a 401 on every cold load.
+    const hasSessionHint = document.cookie
+      .split('; ')
+      .some((c) => {
+        const eq = c.indexOf('=');
+        return eq > 0 && c.slice(0, eq) === 'has_session' && c.slice(eq + 1).length > 0;
+      });
+    if (!hasSessionHint) {
+      setIsLoading(false);
+      return;
+    }
+
     api
       .post('/auth/refresh')
       .then((res) => {
@@ -33,8 +44,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return api.get<User>('/auth/me');
       })
       .then((res) => setUser(res.data))
-      .catch(() => {
-        // No valid cookie — user is not authenticated.
+      .catch((err) => {
+        // Hint was stale (e.g. server-side revoke). Clear it on auth failure so
+        // we don't keep hitting /refresh on every reload. Leave it alone on
+        // network/server errors so a transient outage doesn't force re-login.
+        if (err?.response?.status === 401) {
+          document.cookie = 'has_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+        }
       })
       .finally(() => setIsLoading(false));
   }, []);

@@ -42,9 +42,29 @@ const refreshCookieOptions: CookieOptions = {
   maxAge: REFRESH_TTL_SECS * 1000,
 };
 
+// Non-HttpOnly advisory cookie so the client can skip the silent /refresh call
+// when no session exists, avoiding a noisy 401 in the console on every cold visit.
+// Carries no auth value — auth is still enforced by the HttpOnly refresh_token.
+const hintCookieOptions: CookieOptions = {
+  ...baseCookieOptions,
+  httpOnly: false,
+  path: '/',
+  maxAge: REFRESH_TTL_SECS * 1000,
+};
+
 function setAuthCookies(res: Response, accessToken: string, refreshToken: string): void {
   res.cookie('access_token', accessToken, accessCookieOptions);
   res.cookie('refresh_token', refreshToken, refreshCookieOptions);
+  res.cookie('has_session', '1', hintCookieOptions);
+}
+
+// Express's res.clearCookie preserves maxAge from the passed options; since our
+// cookie options carry a positive maxAge, the browser would keep the cleared
+// (empty-value) cookie alive instead of deleting it. Pass options without maxAge.
+function clearAuthCookies(res: Response): void {
+  res.clearCookie('access_token',  { ...baseCookieOptions, path: '/' });
+  res.clearCookie('refresh_token', { ...baseCookieOptions, path: '/api/auth/refresh' });
+  res.clearCookie('has_session',   { ...baseCookieOptions, httpOnly: false, path: '/' });
 }
 
 const registerSchema = z.object({
@@ -239,8 +259,7 @@ router.post('/logout', authenticate, async (req: AuthRequest, res: Response) => 
       [tokenHash]
     );
   }
-  res.clearCookie('access_token', accessCookieOptions);
-  res.clearCookie('refresh_token', refreshCookieOptions);
+  clearAuthCookies(res);
   res.status(204).send();
 });
 
