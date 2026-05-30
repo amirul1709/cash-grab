@@ -12,7 +12,11 @@ export function authenticate(req: AuthRequest, res: Response, next: NextFunction
     return;
   }
   try {
-    const payload = jwt.verify(token, process.env.JWT_ACCESS_SECRET!) as {
+    // Pin the algorithm so a token forged with a different `alg` header
+    // (e.g. an algorithm-confusion attempt) can't be accepted.
+    const payload = jwt.verify(token, process.env.JWT_ACCESS_SECRET!, {
+      algorithms: ['HS256'],
+    }) as {
       id: number;
       email: string;
     };

@@ -4,6 +4,10 @@ import { isTokenExpiring, setExpiry, clearExpiry } from './tokenStore';
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL ?? '/api',
   withCredentials: true,
+  // Custom header the server's csrfGuard requires on state-changing requests.
+  // Being non-safelisted, it forces a CORS preflight cross-origin, which our
+  // CORS policy only grants to the trusted client origin — blocking CSRF.
+  headers: { 'X-Requested-With': 'XMLHttpRequest' },
 });
 
 let refreshPromise: Promise<void> | null = null;

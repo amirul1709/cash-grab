@@ -13,6 +13,7 @@ import categoriesRouter from './routes/categories';
 import budgetsRouter from './routes/budgets';
 import dashboardRouter from './routes/dashboard';
 import { errorHandler } from './middleware/errorHandler';
+import { csrfGuard } from './middleware/csrf';
 
 dotenv.config();
 
@@ -54,6 +55,10 @@ app.use(helmet());
 app.use(cors({ origin: env.CLIENT_URL, credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
+
+// Require a custom header on all state-changing requests (CSRF defense).
+// Runs after CORS so legitimate preflights are handled first.
+app.use(csrfGuard);
 
 app.use('/api/auth', authRouter);
 app.use('/api/accounts', accountsRouter);
