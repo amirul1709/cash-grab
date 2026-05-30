@@ -79,7 +79,10 @@ const loginSchema = z.object({
 });
 
 function makeAccessToken(id: number, email: string): string {
-  return jwt.sign({ id, email }, process.env.JWT_ACCESS_SECRET!, { expiresIn: ACCESS_TTL });
+  return jwt.sign({ id, email }, process.env.JWT_ACCESS_SECRET!, {
+    expiresIn: ACCESS_TTL,
+    algorithm: 'HS256',
+  });
 }
 
 /**
